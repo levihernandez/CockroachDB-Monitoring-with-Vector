@@ -1,0 +1,133 @@
+## COLLECT DATA   
+
+### CockroachDB Prometheus metrics
+[sources.crdb_ui_console]
+type = "prometheus_scrape"
+endpoints = [ "https://localhost:8080/_status/vars" ]
+scrape_interval_secs = 15
+instance_tag = "instance"
+endpoint_tag = "endpoint"
+# Collect data from the CRDB secure cluster
+tls.crt_file = "certs/node.crt"
+tls.ca_file = "certs/ca.crt"
+tls.key_file = "certs/node.key"
+
+### CockroachDB host metrics
+[sources.crdb_node_metrics]
+type = "host_metrics"
+collectors = [ "cpu","memory","disk","network","filesystem" ]
+scrape_interval_secs = 15
+
+### CockroachDB logs
+[sources.crdb_logs]
+type = "file"
+ignore_older_secs = 600
+include = ["/mnt/disks/crdb-disk/cockroach-data/logs/cockroach.log", "/mnt/disks/crdb-disk/cockroach-data/logs/cockroach-health.log", "/mnt/disks/crdb-disk/cockroach-data/logs/cockroach-security.log", "/mnt/disks/crdb-disk/cockroach-data/logs/cockroach-sql-audit.log", "/mnt/disks/crdb-disk/cockroach-data/logs/cockroach-sql-auth.log", "/mnt/disks/crdb-disk/cockroach-data/logs/cockroach-sql-exec.log", "/mnt/disks/crdb-disk/cockroach-data/logs/cockroach-sql-slow.log", "/mnt/disks/crdb-disk/cockroach-data/logs/cockroach-sql-schema.log", "/mnt/disks/crdb-disk/cockroach-data/logs/cockroach-pebble.log", "/mnt/disks/crdb-disk/cockroach-data/logs/cockroach-telemetry.log"]
+
+
+
+## TRANSFORM DATA
+
+### Modify collected data as new metrics
+[transforms.crdb_log_metric]
+type = "log_to_metric"
+inputs = [ "crdb_logs" ]
+
+### When transforming log data from raw logs, use the parse regex patterns: https://vector.dev/docs/reference/vrl/functions/#parse_regex
+  [transforms.crdb_log_metric.metrics]
+  field = "duration"
+  name = "duration_total"
+  namespace = "service"
+  type = "counter"
+
+    [transforms.crdb_log_metric.metrics.tags]
+    host = "${HOSTNAME}"
+    region = "us-east-1"
+    status = "{{status}}"
+
+
+
+## DELIVER DATA
+
+### Preview metrics/logs in the terminal output
+[sinks.crdb_cli_out]
+type = "console"
+inputs = [ "crdb_ui_console", "crdb_logs", "crdb_node_metrics" , "crdb_internal_metrics", "crdb_log_metric" ]
+target = "stdout"
+tags = ["source:crdb_cluster","env:dev","collector:vector"]
+
+  [sinks.crdb_cli_log.encoding]
+  codec = "json"
+
+### Datadog Metrics + Logs: produce custom metrics in DD
+[sinks.crdb_dd_metrics]
+type = "datadog_metrics"
+inputs = [ "crdb_ui_console", "crdb_node_metrics", "crdb_log_metric"  ]
+default_api_key = "${DATADOG_API_KEY}"
+
+[sinks.crdb_dd_logs]
+type = "datadog_logs"
+inputs = [ "crdb_logs"]
+default_api_key = "${DATADOG_API_KEY}"
+region = "us"
+compression = "gzip"
+site = "datadoghq.com"
+tags = ["source:vector","env:dev","collector:live process"]
+
+
+### New Relic Metrics + Logs
+
+[sinks.my_sink_id]
+type = "new_relic"
+inputs = [ "crdb_ui_console", "crdb_node_metrics", "crdb_log_metric"  ]
+license_key = "${NEWRELIC_KEY}"
+account_id = "xxxx"
+region = "us"
+compression = "gzip"
+api = "events"
+
+[sinks.my_sink_id]
+type = "new_relic_logs"
+inputs = [ "crdb_logs"]
+insert_key = "xxxx"
+license_key = "${NEWRELIC_KEY}"
+compression = "none"
+region = "us"
+
+### Splunk Metrics + Logs
+
+```toml
+[sinks.my_sink_id]
+type = "splunk_hec_metrics"
+inputs = [ "crdb_ui_console", "crdb_node_metrics", "crdb_log_metric"  ]
+endpoint = "https://http-inputs-hec.splunkcloud.com"
+host_key = "hostname"
+index = "{{ host }}"
+source = "{{ file }}"
+compression = "none"
+default_token = "${SPLUNK_HEC_TOKEN}"
+sourcetype = "{{ sourcetype }}"
+```
+
+[sinks.my_sink_id]
+type = "splunk_hec_logs"
+inputs = [ "crdb_logs"]
+endpoint = "https://http-inputs-hec.splunkcloud.com"
+host_key = "hostname"
+indexed_fields = [ "field1" ]
+compression = "none"
+default_token = "${SPLUNK_HEC_TOKEN}"
+
+  [sinks.my_sink_id.encoding]
+  codec = "json"
+
+### ElasticSearch Metrics + Logs
+
+[sinks.my_sink_id]
+type = "elasticsearch"
+inputs = [ "crdb_ui_console", "crdb_logs", "crdb_node_metrics", "crdb_log_metric" ]
+## Local elasticsearch endpoint
+endpoint = "http://<elasticsearch-endpoint>:9000"
+mode = "bulk"
+pipeline = "pipeline-name"
+compression = "none"
