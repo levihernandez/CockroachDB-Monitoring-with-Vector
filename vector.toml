@@ -96,7 +96,7 @@ region = "us"
 
 ### Splunk Metrics + Logs
 
-```toml
+
 [sinks.my_sink_id]
 type = "splunk_hec_metrics"
 inputs = [ "crdb_ui_console", "crdb_node_metrics", "crdb_log_metric"  ]
@@ -107,7 +107,7 @@ source = "{{ file }}"
 compression = "none"
 default_token = "${SPLUNK_HEC_TOKEN}"
 sourcetype = "{{ sourcetype }}"
-```
+
 
 [sinks.my_sink_id]
 type = "splunk_hec_logs"
