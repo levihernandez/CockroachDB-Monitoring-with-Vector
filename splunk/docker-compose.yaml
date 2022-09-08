@@ -1,0 +1,14 @@
+# https://splunk.github.io/docker-splunk/EXAMPLES.html#create-standalone-with-hec
+version: "3.6"
+
+services:
+  splunk:
+    image: splunk/splunk:latest
+    container_name: so1
+    environment:
+      - SPLUNK_START_ARGS=--accept-license
+      - SPLUNK_HEC_TOKEN=abcd1234
+      - SPLUNK_PASSWORD=splunk12345
+    ports:
+      - 8000:8000
+      - 8088:8088
