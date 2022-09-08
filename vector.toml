@@ -83,6 +83,7 @@ tags = ["source:vector","env:dev","collector:live process"]
 
 # >>>>> New Relic Metrics + Logs
 # Untested - Syntax based on Vector documentation. See cloud option at https://login.newrelic.com/
+
 [sinks.my_sink_id]
 type = "new_relic"
 inputs = [ "crdb_ui_console", "crdb_node_metrics" ]
@@ -103,14 +104,15 @@ region = "us"
 
 # >>>>> ElasticSearch Metrics + Logs
 # Tested in local docker compose ELK stack. See cloud option at https://cloud.elastic.co/
-[sinks.my_sink_id]
+
+[sinks.to_elastic_as_logs]
 type = "elasticsearch"
-inputs = [ "crdb_ui_console", "crdb_logs", "crdb_node_metrics" ]
+inputs = [ "crdb_ui_console", "crdb_node_metrics" ]
 ## Local elasticsearch endpoint
-endpoint = "http://192.168.86.30:9000"
+endpoint = "http://192.168.86.30:9200"
 mode = "bulk"
-pipeline = "pipeline-name"
-compression = "none"
+pipeline = "crdb-monitor"
+compression = "gzip"
 
 
 
