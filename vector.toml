@@ -103,7 +103,7 @@ region = "us"
 
 
 # >>>>> ElasticSearch Metrics + Logs
-# Tested in local docker compose ELK stack. See cloud option at https://cloud.elastic.co/
+# Tested in local docker compose Elasticsearch/Kibana stack. See cloud option at https://cloud.elastic.co/
 
 [sinks.to_elastic_as_logs]
 type = "elasticsearch"
