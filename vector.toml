@@ -84,7 +84,7 @@ tags = ["source:vector","env:dev","collector:live process"]
 # >>>>> New Relic Metrics + Logs
 # Untested - Syntax based on Vector documentation. See cloud option at https://login.newrelic.com/
 
-[sinks.my_sink_id]
+[sinks.metrics_to_newrelic]
 type = "new_relic"
 inputs = [ "crdb_ui_console", "crdb_node_metrics" ]
 license_key = "${NEWRELIC_KEY}"
@@ -93,7 +93,7 @@ region = "us"
 compression = "gzip"
 api = "events"
 
-[sinks.my_sink_id]
+[sinks.logs_to_newrelic]
 type = "new_relic_logs"
 inputs = [ "crdb_logs"]
 insert_key = "xxxx"
